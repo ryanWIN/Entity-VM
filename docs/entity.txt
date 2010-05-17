@@ -1,0 +1,5 @@
+ENTITY demo
+===========
+Usage:  entity file.bin
+
+entity loads a binary produced by the gVM assembler and executes it

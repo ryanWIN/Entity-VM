@@ -1,0 +1,237 @@
+Implemented System Functions (release 6)
+========================================
+
+(* denotes a c-style prototype of what the function uses)
+(- is a description of the function)
+(sample code is enclosed in lines of -------)
+(> describes the function in plain english)
+
+
+STDIO routines
+==============
+
+sys_write
+* sys_write(const char *string);
+- sys_write writes a null-terminated string to stdout
+  -------
+  push &string
+  push sys_write
+  sys
+  exit
+
+  :string "hello, world!"
+  -------
+> Puts the point to "hello, world!" on the stack, pushes the sys_write
+  handle, then branches to the sys_write routine which outputs the
+  string to stdout (usually the console).
+
+sys_read
+- sys_read reads from stdin and terminates with either a newline
+  or when the buffer size is reached
+* sys_read(char *string,int buffer);
+  -------
+  push &buffer
+  push 20
+  push sys_read
+  sys
+  exit
+
+  :buffer "                       "
+  -------
+> Puts the pointer to our buffer on the stack, puts a buffer size
+  of 20 on the stack, then calls sys_read.
+
+
+sys_putchar
+- sys_putchar writes a character to stdout
+* sys_putchar(int char);
+  -------
+  push 65
+  push sys_putchar
+  sys
+  exit
+  -------
+> Pushes 65 (or A in ascii notation), pushes the sys_putchar function,
+  then calls sys.
+
+sys_endl
+- sys_endl writes a newline to stdout
+* sys_endl();
+  -------
+  push sys_endl
+  sys
+  -------
+> writes a platform-independent newline to stdout
+
+
+Conversion Routines
+===================
+sys_atoi
+- sys_atoi puts the integer value of a string on the stack
+* sys_atoi(char *string);
+  -------
+  push &mystring
+  push sys_atoi
+  sys
+  exit
+  
+  :mystring "35" 
+  -------
+
+> Pushes the address of mystring, then performs an atoi operation
+  which results in 35 being put on the stack.
+
+sys_itoa
+- sys_itoa converts an integer value to a string
+* sys_itoa(int value, char *buffer);
+  -------
+  push 30
+  push &buffer
+  push sys_itoa
+  sys
+  exit
+  
+  :buffer "                          "
+  -------
+
+> Puts 30 on the stack, puts the address of the buffer on the stack,
+  then writes the string "30"+nulltermination to buffer's address.
+
+
+sys_atof
+- sys_atof puts the floating point value of a string on the floating
+  point stack
+* sys_atof(char *string);
+  -------
+  push &mystring
+  push sys_atof
+  sys
+  exit
+  
+  :mystring "3.14" 
+  -------
+
+> Pushes the address of mystring, then performs an atof operation
+  which results in 3.14 being put on the floating point stack.
+
+sys_ftoa
+- sys_ftoa converts a floating point value to a string
+* sys_ftoa(double value, char *buffer);
+  -------
+  pushf 3.14
+  push &buffer
+  push sys_ftoa
+  sys
+  exit
+  
+  :buffer "                          "
+  -------
+
+> Puts 3.14 on the floating point stack, puts the address of the
+  buffer on the stack, then writes the string "3.14"+nulltermination
+  to buffer's address.
+
+
+String Routines
+===============
+
+sys_strlen
+- sys_strlen puts the size of a nullterminated string on the stack
+* sys_strlen(char *string);
+  -------
+  push &mystring
+  push sys_strlen
+  sys
+  exit
+  
+  :mystring "hello" 
+  -------
+> Puts the address of "hello" on the stack, then performs a strlen
+  operation which puts 5 on the stack.  String length does not count
+  the null termination.
+
+
+Data Routines
+=============
+
+sys_szdouble
+- sys_szdouble puts the size of the double data type on the stack.
+* sys_szdouble();
+  -------
+  push sys_szdouble
+  sys
+  exit
+  -------
+> Puts sizeof(double) on the stack.  This routine should be used
+  when doing bytewise operations in the virtual machine.  The
+  virtual machine may have different sizes for double and int depending
+  on the platform executed.
+
+
+sys_szint
+- sys_szint puts the size of the int data type on the stack.
+* sys_szint();
+  -------
+  push sys_szint
+  sys
+  exit
+  -------
+> Puts sizeof(int) on the stack.  This routine should be used
+  when doing bytewise operations in the virtual machine.  The
+  virtual machine may have different sizes for double and int depending
+  on the platform executed.
+
+
+Processing Routines
+===================
+
+sys_thread
+- sys_thread creates a new thread process using codepointer as 
+  the entry point and start address.  New threads may not access
+  the stack of the calling thread due to the fact that each thread
+  has its own unique stack.
+* sys_thread(void *codepointer);
+  -------
+  see thread.asm for an example of threads
+  -------
+> NOTE: In the future, sys_thread may return a handle to the
+  thread created for manipulation operations (sys_suspend, etc.)
+
+sys_yield
+- sys_yield yields operation of slices number of timeslices to the
+  task scheduler.
+* sys_yield(int slices);
+  -------
+  push 3
+  push sys_yield
+  sys
+  -------
+> Yielding 0 slices results in yielding the rest of the current
+  timeslice to the task scheduler.  This is useful in writing low
+  priority code.
+
+
+
+
+C defines
+=========
+
+#define sys_write 1
+#define sys_read 2
+#define sys_putchar 3
+#define sys_endl 4
+
+#define sys_atoi 16
+#define sys_itoa 17
+#define sys_atof 18
+#define sys_ftoa 19
+
+#define sys_strlen 32
+
+#define sys_szdouble 64
+#define sys_szint 65
+
+#define sys_thread 1337
+#define sys_yield 1338
+
+

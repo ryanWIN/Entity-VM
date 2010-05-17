@@ -1,0 +1,146 @@
+Function and Return, State Preservation, and you!
+=================================================
+
+(sample code is enclosed in lines of -------)
+(> describes in plain english)
+
+
+FUNCTION Frame
+==============
+
+What's a function frame? Well, let's find out!
+
+A function frame defines a function's operating state.  It is a basic prototype for
+data that is essential to defining a function's state.  For example, a recursive
+function with a paramater N requires N to be unique in each instance of this call.
+If the currently operating function has the previous function's value for N, the
+function is degraded and the output yields unexpected results.  gVM steps over
+this by defining the state of a function and preserving it upon branching to
+another function.
+
+
+FRAMEWORK BASICS
+================
+
+Layout
+-------
+:framename &function type type type ... end
+:variable data
+:variable data
+:variable data
+-------
+
+A frame contains the start address of your function (the entry point) and the data that
+the function needs to preserve (this is where you declare your variables).
+
+Accepted types are:  int, float, byte
+Another example frame would be:
+-------
+:hello.frame &hello int float byte end
+:n 0
+:pi 3.14
+:achar 'A'
+-------
+
+
+
+REAL example
+-------
+:fibonacci.frame &fibonacci int end
+:fibonacci.n 0
+:fibonacci
+
+;take our param from the stack and put it into n for storage
+push &fibonacci.n
+store
+
+push &fibonacci.n
+load
+push 3
+cmp
+push &fibonacci.lessthan3
+jml
+
+
+push &fibonacci.n
+load
+push 1
+sub
+push &fibonacci.frame
+function
+
+push &fibonacci.n
+load
+push 2
+sub
+push &fibonacci.frame
+function
+
+;add the 2 results of the fibonacci calls
+add
+
+
+;our return value is on the stack, it's the result of fibonacci(n-1) + fibonacci(n-2)
+return
+
+:fibonacci.lessthan3
+;here we directly push 1 as our return value
+push 1
+return 
+
+-------
+> This is equivalent to the c code of:
+> int fibonacci(int n) { if(n<3) return 1; else return(fibonacci(n-1) + fibonacci(n-2)); }
+> You use the stack for params (push the params before the function call)
+> and you can return any number of values on the stack (push the params before return)
+> the function opcode preserves data internally, not within the context of the usable stacks.
+> Due to the use of assembler construction, the framework can be defined anywhere
+> in the code.  You can actually define it anywhere outside of executable code :)
+> This is ideal for code generated from a compiler where a prototype is before or after
+> the actual code.  You can define it before, or after the function entry point.
+
+Like this
+-------
+:fibonacci.frame &fibonacci int end
+:fibonacci.n 0
+
+
+:main
+....
+
+:fibonacci
+-------
+
+
+Or, Like this
+-------
+
+
+:main
+....
+
+:fibonacci
+....
+
+:fibonacci.frame &fibonacci int end
+:fibonacci.n 0
+
+
+
+-------
+
+
+RETURN
+======
+
+Return restores the frame to the state before it was invoked.  Merely push the values you want the
+invoker to see on the stack then use the return opcode.
+
+Equivalent of return(1) in c
+-------
+
+push 1
+return
+
+-------
+

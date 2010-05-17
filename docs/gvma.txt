@@ -1,0 +1,88 @@
+gVM assembler
+=============
+Usage:  gvma file.asm outputname.bin
+
+The gVM assembler uses a statemachine to parse through assembler files generating a gVM binary
+for use with the gVM object.
+
+
+
+
+Different types of tokens in the assembler are as follows (extra whitespace is ignored):
+
+NUM = a number (such as 353, 135, 135).  This takes up (sizeof(int), or 32bits) bytes in ramspace.
+
+   1533
+  13531
+
+FLOAT = a floating point number (such as 3.14, .135, 5.3).  This takes up (sizeof(double)) bytes in ramspace.
+
+   3.15
+   3.14
+
+
+STRING = anything within double quotes (the assembler automatically adds a nulltermination) such as "hello".
+         this takes up the number of characters in the string (not including the quotes) + 1 (for the null termination)
+         ***NOTE Your string will be padded internally in order to enforce 32bit data alignment.
+
+   "hello, world!"
+   "hiya"
+
+CHARARRAY = anything within single quotes does not have a null termination added
+            ***NOTE Your string will be padded internally in order to enforce 32bit data alignment.
+   'Hello, World!'
+
+
+
+ALPH = alphanumerical keyword that can take up the same size as NUM, FLOAT, or a byte.
+
+   push sys_endl
+   sys
+   (opcodes push and sys take up a byte in ramspace, while sys_endl takes up a NUM)
+   (all opcodes in gvm take up a byte, and all sys/api keywords take up a NUM)
+  
+
+
+LABEL = This takes 0 bytes in ramspace, labels are used to signify an address. (:hello)
+
+   :hello 32
+   :mybaby 33
+   (this asm file would take up 2 NUMs, while :hello points to 32 and :mybaby points to 33)
+
+
+ADDRESS = The address of a label in ramspace.  This takes up the same size as a NUM in ramspace.
+
+   :hello
+   push &hello
+   (the address of hello is 0, so push &hello translates to push 0)
+
+
+COMMENT = anything after a ; in a line is ignored by the assembler
+
+   ;this is not seen
+  
+   push 30 ;comment is after the code, therefore code runs
+  
+   ;this code is commented and won't run:  push 30
+
+
+****All asm files need a :main label to signify where the program should start****
+
+
+AN EXAMPLE ASM FILE:
+
+:main
+
+ push 30
+ push 30
+ add
+
+exit
+
+
+***Line feeds and uniform spacing are not necessary so the example asm file will run the same if it were:
+
+:main     push 30 push    30   add  exit
+
+
+

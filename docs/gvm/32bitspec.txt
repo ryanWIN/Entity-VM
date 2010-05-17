@@ -1,0 +1,549 @@
+gVM Abstract
+============
+
+gVM is a stack-based virtual machine subsystem designed to provide an elegant,
+controlled processing environment for custom tasks (as a better alternative to scripting).
+
+Some example uses of gVM would be:  programming a bartender in an RPG engine, writing a ruleset
+for a soccer game, or even writing a fully programmable IRC client.
+
+(int is a 32bit integer value, double is a floating point value, and char is a byte)
+(- is a description of the opcode)
+(* is a line of pseudo c code that represents what's going on in the virtual machine at each opcode)
+(sample code is contained in lines of -----'s)
+(> describes the sample code)
+
+
+************ NOTE ***********************
+Binary operators with gVM operate in the following fashion:
+  ------
+  push a
+  push b
+  operator
+  ------
+>Produces code equivalent to a OPERATOR b
+*****************************************
+
+
+Stack manipulation opcodes
+==========================
+
+push int
+- push puts a 32bit value on the 32bit stack, then increments the 32bit stack pointer
+* stack[stackpointer] = int;  ++stackpointer;  
+  -------
+  push 31337
+  push 4930
+  -------
+> puts 31337 and 4930 on the stack
+
+pop
+- pop discards the top entry on the 32bit stack by decrementing the 32bit stack pointer
+* --stackpointer;  
+  -------
+  push 30
+  pop
+  ------
+> puts 30 on the stack and then deletes it
+
+clone
+- clone takes the value of the last entry on the 32bit stack provided by stack[stackpointer-1]
+  and creates a new entry with this value
+* stack[stackpointer] = stack[stackpointer - 1];  ++stackpointer;  
+  -------
+  push 31337
+  clone
+  -------
+> puts 31337 on the 32bit stack, and then clones it which creates 2 31337's on the 32bit stack
+
+convert
+- convert takes the last entry off of the 32bit stack and places the floating point equivalent
+  on the floating point stack
+* --stackpointer; fstack[fstackpointer] = (double) stack[stackpointer]; ++fstackpointer;
+  -------
+  push 31337
+  convert
+  -------
+> puts 31337 on the 32bit stack, puts 31337.0 on the floating point stack, and removes the
+  original 31337 value from the 32bit stack
+
+
+
+
+
+Basic Math opcodes
+==================
+
+add
+- add performs addition on the last 2 stack entries, discarding the original 2 entries
+  while putting the result on the stack
+* stackpointer-=2; stack[stackpointer] = stack[stackpointer] + stack[stackpointer + 1]; ++stackpointer;
+  -------
+  push 50
+  push 30
+  add
+  -------
+> puts 50 on the stack, puts 30 on the stack, removes both, then puts (50+30) on the stack
+> "push 50 push -30 add" works the same as "push 50 push 30 sub"
+
+
+sub
+- sub performs subtraction on the last 2 stack entries, discarding the original 2 entries
+  while putting the result on the stack
+* stackpointer-=2; stack[stackpointer] = stack[stackpointer] - stack[stackpointer + 1]; ++stackpointer;
+  -------
+  push 90
+  push 30
+  sub
+  -------
+> puts 90 on the stack, puts 30 on the stack, removes both, then puts (90-30) on the stack
+> "push 50 push -30 sub" works the same as "push 50 push 30 add"
+
+
+mul
+- mul performs multiplication on the last 2 stack entries, discarding the original 2 entries
+  while putting the result on the stack
+* stackpointer-=2; stack[stackpointer] = stack[stackpointer] * stack[stackpointer + 1]; ++stackpointer;
+  -------
+  push 9
+  push 3
+  mul
+  -------
+> puts 9 on the stack, puts 3 on the stack, removes both, then puts (9*3) on the stack
+
+
+div
+- div performs division on the last 2 stack entries, discarding the original 2 entries
+  while putting the result on the stack
+* stackpointer-=2; stack[stackpointer] = stack[stackpointer] / stack[stackpointer + 1]; ++stackpointer;
+  -------
+  push 9
+  push 3
+  div
+  -------
+> puts 9 on the stack, puts 3 on the stack, removes both, then puts (9/3) on the stack
+> a division by 0 generates an error in the vm
+
+
+Bitwise logic
+=============
+
+and
+- and performs a bitwise AND on the last 2 stack entries, discarding the original 2 entries
+  while putting the result on the stack
+* stackpointer-=2; stack[stackpointer] = stack[stackpointer] & stack[stackpointer + 1]; ++stackpointer;
+  -------
+  push 9
+  push 3
+  and
+  -------
+> puts 9 on the stack, puts 3 on the stack, removes both, then puts (9 & 3) on the stack
+
+
+or
+- or performs a bitwise OR on the last 2 stack entries, discarding the original 2 entries
+  while putting the result on the stack
+* stackpointer-=2; stack[stackpointer] = stack[stackpointer] | stack[stackpointer + 1]; ++stackpointer;
+  -------
+  push 9
+  push 3
+  or
+  -------
+> puts 9 on the stack, puts 3 on the stack, removes both, then puts (9|3) on the stack
+
+
+xor
+- xor performs a bitwise XOR on the last 2 stack entries, discarding the original 2 entries
+  while putting the result on the stack
+* stackpointer-=2; stack[stackpointer] = stack[stackpointer] ^ stack[stackpointer + 1]; ++stackpointer;
+  -------
+  push 9
+  push 3
+  xor
+  -------
+> puts 9 on the stack, puts 3 on the stack, removes both, then puts (9^3) on the stack
+
+
+not
+- not performs a bitwise NOT on the top stack entry, replacing the original entry with
+  the operated data
+* --stackpointer; stack[stackpointer] = !stack[stackpointer]; ++stackpointer;
+  -------
+  push 9
+  not
+  -------
+> puts 9 on the stack, removes it, then puts !9 on the stack
+
+
+
+
+Extended Math and Bitshifting
+=============================
+
+exp
+- exp performs an exponent function nn the last 2 stack entries, discarding the original 2 entries
+  while putting the result on the stack
+* stackpointer-=2; stack[stackpointer] = (int) pow(stack[stackpointer],stack[stackpointer + 1]); ++stackpointer;
+  -------
+  push 9
+  push 3
+  exp
+  -------
+> puts 9 on the stack, puts 3 on the stack, removes both, then puts pow(9,3) on the stack
+
+
+mod
+- mod performs a modulo on the last 2 stack entries, discarding the original 2 entries
+  while putting the result on the stack
+* stackpointer-=2; stack[stackpointer] = stack[stackpointer] % stack[stackpointer + 1]; ++stackpointer;
+  -------
+  push 9
+  push 3
+  mod
+  -------
+> puts 9 on the stack, puts 3 on the stack, removes both, then puts (9%3) on the stack
+
+
+shr
+- shr performs a bitshift-right on the last 2 stack entries, discarding the original 2 entries
+  while putting the result on the stack
+* stackpointer-=2; stack[stackpointer] = stack[stackpointer] >> stack[stackpointer + 1]; ++stackpointer;
+  -------
+  push 9
+  push 3
+  shr
+  -------
+> puts 9 on the stack, puts 3 on the stack, removes both, then puts (9>>3) on the stack
+
+
+shl
+- shl performs a bitshift-left on the last 2 stack entries, discarding the original 2 entries
+  while putting the result on the stack
+* stackpointer-=2; stack[stackpointer] = stack[stackpointer] << stack[stackpointer + 1]; ++stackpointer;
+  -------
+  push 9
+  push 3
+  shl
+  -------
+> puts 9 on the stack, puts 3 on the stack, removes both, then puts (9<<3) on the stack
+
+
+
+
+Branching, and Conditional Processing
+=====================================
+
+cmp
+- cmp performs a comparison on the last 2 entries, deletes both entries, then puts the
+  comparison data type on the stack
+* stackpointer-=2; stack[stackpointer] = comparison(stack[stackpointer],stack[stackpointer + 1]); ++stackpointer;
+  -------
+  push 9
+  push 3
+  cmp
+  -------
+> puts 9 on the stack, puts 3 on the stack, removes both, then puts comparison(9,3) on the stack
+> the comparison data type comprises of logical tests on the 2 data
+  union evaluation
+  {
+   struct BITEVAL
+   {
+    char equal : 1;
+    char notequal : 1;
+    char lessthan : 1;
+    char greaterthan : 1;
+    char greaterthanequal : 1;
+    char lessthanequal : 1;
+   } cmpbit;
+  
+  int cmpint;
+  };
+
+
+jmp
+- jmp modifies the current codepointer to the position as provided by the last
+  entry in the stack, and removes the entry upon codepointer modification
+* --stackpointer; codepointer = stack[stackpointer];
+  -------
+  push &mylabel
+  jmp
+  -------
+> puts the address of :mylabel on the stack, then branches to it
+> jmp should not be used after cmp
+
+jme (jump if equal)
+- jme modifies the current codepointer to the position as provided by the last
+  entry in the stack if the comparison data type (as provided by cmp) has set
+  EQUAL to true.  If the comparison yields false for EQUAL, then code resumes
+  normally. In either case, the comparison data and the address are purged from the stack
+* stackpointer-=2; comparisontype=stack[stackpointer]; if(comparisontype.equal==1) codepointer=stack[stackpointer+1];
+  -------
+  push 3
+  push 3
+  cmp
+  push &mylabel
+  jme
+  -------
+> Compares 3 with 3.  Pushes the address of :mylabel on the stack, then if the 
+  numbers are both equal (which they are), execution branches to &mylabel
+
+
+jml (jump if less than)
+- jml modifies the current codepointer to the position as provided by the last
+  entry in the stack if the comparison data type (as provided by cmp) has set
+  LESSTHAN to true.  If the comparison yields false for LESSTHAN, then code resumes
+  normally. In either case, the comparison data and the address are purged from the stack
+* stackpointer-=2; comparisontype=stack[stackpointer]; if(comparisontype.lessthan==1) codepointer=stack[stackpointer+1];
+  -------
+  push 3
+  push 10
+  cmp
+  push &mylabel
+  jml
+  -------
+> Compares 3 with 10.  Pushes the address of :mylabel on the stack, then if 3 
+  is less than 10 (which it is), execution branches to &mylabel
+
+
+jmg (jump if greater than)
+- jmg modifies the current codepointer to the position as provided by the last
+  entry in the stack if the comparison data type (as provided by cmp) has set
+  GREATERTHAN to true.  If the comparison yields false for GREATERTHAN, then code resumes
+  normally. In either case, the comparison data and the address are purged from the stack
+* stackpointer-=2; comparisontype=stack[stackpointer]; if(comparisontype.greaterthan==1) codepointer=stack[stackpointer+1];
+  -------
+  push 10
+  push 3
+  cmp
+  push &mylabel
+  jml
+  -------
+> Compares 10 with 3.  Pushes the address of :mylabel on the stack, then if 10 
+  is greater than 3 (which it is), execution branches to &mylabel
+
+
+
+jle (jump if less than or equal)
+- jle modifies the current codepointer to the position as provided by the last
+  entry in the stack if the comparison data type (as provided by cmp) has set
+  LESSTHANEQUAL to true.  If the comparison yields false for LESSTHANEQUAL, then code resumes
+  normally. In either case, the comparison data and the address are purged from the stack
+* stackpointer-=2; comparisontype=stack[stackpointer]; if(comparisontype.lessthanequal==1) codepointer=stack[stackpointer+1];
+  -------
+  push 3
+  push 10
+  cmp
+  push &mylabel
+  jle
+  -------
+> Compares 3 with 10.  Pushes the address of :mylabel on the stack, then if 3 
+  is less than or equal to 10 (which it is), execution branches to &mylabel
+
+
+jge (jump if greater than or equal)
+- jge modifies the current codepointer to the position as provided by the last
+  entry in the stack if the comparison data type (as provided by cmp) has set
+  GREATERTHANEQUAL to true.  If the comparison yields false for GREATERTHANEQUAL, then code resumes
+  normally. In either case, the comparison data and the address are purged from the stack
+* stackpointer-=2; comparisontype=stack[stackpointer]; if(comparisontype.greaterthanequal==1) codepointer=stack[stackpointer+1];
+  -------
+  push 10
+  push 3
+  cmp
+  push &mylabel
+  jge
+  -------
+> Compares 10 with 3.  Pushes the address of :mylabel on the stack, then if 10 
+  is greater than or equal to 3 (which it is), execution branches to &mylabel
+
+jne (jump if not equal)
+- jne modifies the current codepointer to the position as provided by the last
+  entry in the stack if the comparison data type (as provided by cmp) has set
+  NOTEQUAL to true.  If the comparison yields false for NOTEQUAL, then code resumes
+  normally. In either case, the comparison data and the address are purged from the stack
+* stackpointer-=2; comparisontype=stack[stackpointer]; if(comparisontype.notequal==1) codepointer=stack[stackpointer+1];
+  -------
+  push 10
+  push 3
+  cmp
+  push &mylabel
+  jne
+  -------
+> Compares 10 with 3.  Pushes the address of :mylabel on the stack, then if 10 
+  is not equal to 3 (10 and 3 are not equal ;)), execution branches to &mylabel
+
+
+
+
+Memory Routines (the fun stuff)
+===============================
+
+
+load
+- load reads a 32bit value from the address supplied (addresses are stored byte-aligned)
+* --stackpointer; stack[stackpointer]=loadvalue(stack[stackpointer]); ++stackpointer;
+  -------
+  push &i
+  load
+  exit
+
+  :i 32
+  -------
+> Loads 32bits from the address of :i (which correspond to the value of 32) onto the stack
+  while removing the address value placed originally
+
+store
+- store reads an address from the stack, then stores the stack entry behind it at that
+  address
+* stackpointer-=2; ram[stack[stackpointer+1]] = stack[stackpointer];
+  -------
+  push 30
+  push &i
+  store
+  exit
+
+  :i 20
+  -------
+> Pushes 30 on the stack, pushes the address of :i on the stack, then stores 30 at the address
+  of :i, overwriting the 20 that was previously there.
+
+
+loadb
+- loadb reads a byte value from the address supplied (addresses are stored byte-aligned)
+* --stackpointer; stack[stackpointer]= (int) ram[stack[stackpointer]]; ++stackpointer;
+  -------
+  push &i
+  loadb
+  exit
+
+  :i "huhu"
+  -------
+> Loads a byte from the address of :i (which correspond to the character h) onto the stack
+  while removing the address value placed originally
+> loadb should not be used to read a 32bit numerical value in the assembler
+  -------
+  push &i
+  loadb
+  exit
+
+  :i 32
+  ------
+> this is a case where load should be used
+
+storeb
+- storeb reads an address from the stack, then stores the first 8 bits of the stack entry
+  behind it at that address
+* stackpointer-=2; ram[stack[stackpointer+1]] = (char) stack[stackpointer];
+  -------
+  push 65
+  push &i
+  storeb
+  exit
+
+  :i "BBC"
+  -------
+> Pushes 65 on the stack, pushes the address of :i on the stack, then stores a byte of 65 (or 'A')
+  at the address of :i, overwriting the 66 (or 'B') that was previously there.
+
+
+
+
+
+
+API, SYS, and EXIT
+==================
+
+api
+- api is a user-level integration opcode for gVM
+* --stackpointer; routine = stack[stackpointer]; executeroutine(routine,stack,stackpointer);
+  -------
+  push 3
+  push api_render
+  api
+  -------
+> api is meant to be used for user-level code integration with gVM objects.  Routines
+  such as game processing or other code that might otherwise be too slow for gVM to
+  process (rendering, audio routines, etc.)
+> routines may use as many params as they want, just push the params before pushing the api
+  routine and using the api opcode
+
+sys
+- sys is a vm-level integration opcode for gVM
+* --stackpointer; routine = stack[stackpointer]; system(routine,stack,stackpointer);
+  -------
+  push sys_endl
+  sys
+  -------
+> sys provides vm-level operations such as reading and writing from stdio, converting numbers
+  to strings, strings to numbers, and other functions such as memory allocation and threading
+> routines may use as many params as they want, just push the params before pushing the sys
+  routine and using the sys opcode
+
+exit
+- exit terminates processing of the current thread
+* operational=0;
+  -------
+  exit
+  -------
+> exit only terminates processing of the thread that reaches the exit opcode.  If the main process
+  finds an exit code while other threads belonging to this process are still operational, the
+  child threads will be terminated immediately (be sure to keep this in mind when debugging threads
+  that terminate unexpectedly)
+
+
+
+
+gVM opcode defines (for fun and space filler)
+=============================================
+
+//32BIT PROCESSING DEFINES
+//Stack
+#define PUSH 0
+#define POP 1
+#define CLONE 2
+#define CONVERT 3
+
+//Base Math
+#define ADD 4
+#define SUB 5
+#define MUL 6
+#define DIV 7
+
+//Bitwise Logic
+#define AND 8
+#define OR 9
+#define XOR 10
+#define NOT 11
+
+//Extended Math and Bitshift
+#define EXP 16
+#define MOD 17
+#define SHR 18
+#define SHL 19
+
+//Conditional Processing
+//and branching
+#define CMP 32
+#define JMP 33
+#define JME 34
+#define JML 35
+#define JMG 36
+#define JLE 37
+#define JGE 38
+#define JNE 39
+#define CALL 40
+#define RET 41
+
+//Memory routines
+
+#define LOAD 48
+#define STORE 49
+#define LOADB 50
+#define STOREB 51
+
+
+//API, SYS, and EXIT
+
+#define API 61
+#define SYS 62
+#define EXIT 63

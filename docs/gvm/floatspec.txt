@@ -1,0 +1,284 @@
+************ NOTE ***********************
+Binary operators with gVM operate in the following fashion:
+  ------
+  push a
+  push b
+  operator
+  ------
+>Produces code equivalent to a OPERATOR b
+*****************************************
+
+
+Stack manipulation opcodes
+==========================
+
+pushf double
+- pushf puts a double precision floating point value on the floating point stack, then
+  increments the floating point stack pointer
+* fstack[fstackpointer] = double;  ++fstackpointer;  
+  -------
+  pushf 31337.14
+  pushf 3.14
+  -------
+> puts 31337.14 and 3.14 on the stack
+
+popf
+- popf discards the top entry on the floating point stack by decrementing the floating point stack pointer
+* --fstackpointer;  
+  -------
+  pushf 3.14
+  popf
+  ------
+> puts 3.14 on the stack and then deletes it
+
+clonef
+- clonef takes the value of the last entry on the floating point stack provided by fstack[fstackpointer-1]
+  and creates a new entry with this value
+* fstack[fstackpointer] = fstack[fstackpointer - 1];  ++fstackpointer;  
+  -------
+  pushf 3.14
+  clonef
+  -------
+> puts 3.14 on the floating point stack, and then clones it which creates 2 3.14's on the floating point stack
+
+convertf
+- convertf takes the last entry off of the floating point stack and places the 32bit equivalent
+  on the 32bit stack
+* --fstackpointer; stack[stackpointer] = (int) fstack[fstackpointer]; ++stackpointer;
+  -------
+  pushf 3.14
+  convertf
+  -------
+> puts 3.14 on the floating point stack, puts 3 on the 32bit stack, and removes the
+  original 3.14 value from the floating point stack
+
+
+
+Basic Math opcodes
+==================
+
+addf
+- addf performs addition on the last 2 stack entries, discarding the original 2 entries
+  while putting the result on the stack
+* fstackpointer-=2; fstack[fstackpointer] = fstack[fstackpointer] + fstack[fstackpointer + 1]; ++fstackpointer;
+  -------
+  pushf 50.5
+  pushf 30.3
+  addf
+  -------
+> puts 50.5 on the stack, puts 30.3 on the stack, removes both, then puts (50.5+30.3) on the stack
+> "pushf 50.5 pushf -30.0 addf" works the same as "pushf 50.5 pushf 30.0 subf"
+
+
+subf
+- subf performs subtraction on the last 2 stack entries, discarding the original 2 entries
+  while putting the result on the stack
+* fstackpointer-=2; fstack[fstackpointer] = fstack[fstackpointer] - fstack[fstackpointer + 1]; ++fstackpointer;
+  -------
+  pushf 90.5
+  pushf 30.3
+  subf
+  -------
+> puts 90.5 on the stack, puts 30.3 on the stack, removes both, then puts (90.5-30.3) on the stack
+> "pushf 50.0 pushf -30.0 subf" works the same as "pushf 50.0 pushf 30.0 addf"
+
+
+mulf
+- mulf performs multiplication on the last 2 stack entries, discarding the original 2 entries
+  while putting the result on the stack
+* fstackpointer-=2; fstack[fstackpointer] = fstack[fstackpointer] * fstack[fstackpointer + 1]; ++fstackpointer;
+  -------
+  pushf 9.0
+  pushf 3.0
+  mulf
+  -------
+> puts 9.0 on the stack, puts 3.0 on the stack, removes both, then puts (9.0*3.0) on the stack
+
+
+divf
+- divf performs division on the last 2 stack entries, discarding the original 2 entries
+  while putting the result on the stack
+* fstackpointer-=2; fstack[fstackpointer] = fstack[fstackpointer] / fstack[fstackpointer + 1]; ++fstackpointer;
+  -------
+  pushf 9.0
+  pushf 3.0
+  divf
+  -------
+> puts 9.0 on the stack, puts 3.0 on the stack, removes both, then puts (9.0/3.0) on the stack
+> a division by 0 generates an error in the vm
+
+
+Extended Math and Bitshifting
+=============================
+
+expf
+- expf performs an exponent function nn the last 2 stack entries, discarding the original 2 entries
+  while putting the result on the stack
+* fstackpointer-=2; fstack[fstackpointer] = pow(fstack[fstackpointer],fstack[fstackpointer + 1]); ++fstackpointer;
+  -------
+  pushf 9.0
+  pushf 3.0
+  expf
+  -------
+> puts 9.0 on the stack, puts 3.0 on the stack, removes both, then puts pow(9.0,3.0) on the stack
+
+
+modf
+- modf performs a modulo on the last 2 stack entries, discarding the original 2 entries
+  while putting the result on the stack
+* fstackpointer-=2; fstack[fstackpointer] = fmod(fstack[fstackpointer],fstack[fstackpointer + 1]); ++fstackpointer;
+  -------
+  pushf 9.0
+  pushf 3.0
+  modf
+  -------
+> puts 9.0 on the stack, puts 3.0 on the stack, removes both, then puts fmod(9.0,3.0) on the stack
+
+sqrtf
+- sqrtf performs a square root on the last stack entry, discarding the last entry
+* --fstackpointer; fstack[fstackpointer]=sqrtf(fstack[fstackpointer]); ++fstackpointer;
+  -------
+  pushf 9.0
+  sqrtf
+  -------
+> puts 9.0 on the stack, removes the entry, then puts sqrtf(9.0) on the stack
+
+
+cosf
+- cosf performs a cosine on the last stack entry, discarding the last entry
+* --fstackpointer; fstack[fstackpointer]=cos(fstack[fstackpointer]); ++fstackpointer;
+  -------
+  pushf 9.0
+  cosf
+  -------
+> puts 9.0 on the stack, removes the entry, then puts cos(9.0) on the stack
+
+
+sinf
+- sinf performs a sine on the last stack entry, discarding the last entry
+* --fstackpointer; fstack[fstackpointer]=cos(fstack[fstackpointer]); ++fstackpointer;
+  -------
+  pushf 9.0
+  sinf
+  -------
+> puts 9.0 on the stack, removes the entry, then puts sin(9.0) on the stack
+
+tanf
+- tanf performs a tangent on the last stack entry, discarding the last entry
+* --fstackpointer; fstack[fstackpointer]=cos(fstack[fstackpointer]); ++fstackpointer;
+  -------
+  pushf 9.0
+  tanf
+  -------
+> puts 9.0 on the stack, removes the entry, then puts tan(9.0) on the stack
+
+
+
+
+Conditional Processing
+======================
+cmpf
+- cmpf performs a comparison on the last 2 floating point entries, deletes both entries, then puts the
+  comparison data type on the 32bit stack
+* fstackpointer-=2; stack[stackpointer] = comparison(fstack[fstackpointer],fstack[fstackpointer + 1]); ++stackpointer;
+  -------
+  pushf 9.0
+  pushf 3.0
+  cmpf
+  -------
+> puts 9.0 on the stack, puts 3.0 on the stack, removes both, then puts comparisonfloat(9.0,3.0) on the stack
+> the 32bit stack conditional processing opcodes like JGE, JNE (etc.) should be used after this
+  -------
+  pushf 9.0
+  pushf 3.0
+  cmpf
+  push &code
+  jlt
+  -------
+> the comparison data type comprises of logical tests on the 2 data
+  union evaluation
+  {
+   struct BITEVAL
+   {
+    char equal : 1;
+    char notequal : 1;
+    char lessthan : 1;
+    char greaterthan : 1;
+    char greaterthanequal : 1;
+    char lessthanequal : 1;
+   } cmpbit;
+  
+  int cmpint;
+  };
+
+
+
+Memory Routines (the fun stuff)
+===============================
+
+
+loadf
+- loadf reads a floating point value from the address supplied (addresses are stored byte-aligned)
+* --fstackpointer; fstack[fstackpointer]=loadfloatvalue(fstack[fstackpointer]); ++fstackpointer;
+  -------
+  push &i
+  loadf
+  exit
+
+  :i 3.14
+  -------
+> Loads floating points from the address of :i (which correspond to the value of 3.14) onto the stack
+  while removing the address value placed originally
+> load and loadb should not be used to read floating point values
+> the address is pushed on the 32bit stack with push, not pushf'd
+
+storef
+- storef reads an address from the 32bit stack, then stores the top floating point stack entry
+  at that address
+* --fstackpointer; --stackpointer;  ram[stack[stackpointer]] = fstack[fstackpointer];
+  -------
+  pushf 3.14
+  push &i
+  storef
+  exit
+
+  :i 3.1337
+  -------
+> Pushes 3.14 on the stack, pushes the address of :i on the stack, then stores 3.14 at the address
+  of :i, overwriting the 3.1337 that was previously there.
+> store and storeb should not be used to store floating point values
+> the address is pushed on the 32bit stack with push, not pushf'd
+
+
+gVM opcode defines (for fun and space filler)
+=============================================
+
+//FLOATING POINT PROCESSING DEFINES
+
+//Stack
+#define PUSHF 64
+#define POPF 65
+#define CLONEF 66
+#define CONVERTF 67
+
+//Base Math
+#define ADDF 68
+#define SUBF 69
+#define DIVF 70
+#define MULF 71
+
+//Extended Math
+#define EXPF 72
+#define MODF 73
+#define SQRTF 74
+#define COSF 75
+#define SINF 76
+#define TANF 77
+
+//CMP
+#define CMPF 96
+
+//Memory Routines
+#define LOADF 97
+#define STOREF 98
+
